@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Manage Teachers</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #1e272e;
+      color: white;
+      min-height: 100vh;
+      padding-top: 20px;
+    }
+
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #00cec9;
+    }
+
+    .sidebar-nav {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .sidebar-nav li {
+      padding: 12px 20px;
+    }
+
+    .sidebar-nav li a {
+      color: #dcdde1;
+      text-decoration: none;
+      display: block;
+      transition: background 0.3s;
+    }
+
+    .sidebar-nav li:hover,
+    .sidebar-nav li.active {
+      background-color: #2f3640;
+    }
+
+    .sidebar-nav li.active {
+      border-left: 4px solid #00cec9;
+    }
+
+    .sidebar-nav li.active a {
+      color: #00cec9;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+    }
+
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ecf0f1;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 8% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .close-btn {
+      float: right;
+      font-size: 22px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: red;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #0984e3;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0077cc;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>Admin Panel</h2>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="admin_dashboard.html"><i class="fas fa-home"></i> Home</a></li>
+      <li><a href="admin_manage_students.html"><i class="fas fa-user-graduate"></i> Manage Students</a></li>
+      <li class="active"><a href="admin_manage_teachers.html"><i class="fas fa-chalkboard-teacher"></i> Manage Teachers</a></li>
+      <li><a href="admin_manage_subjects.html"><i class="fas fa-book"></i> Manage Subjects</a></li>
+      <li><a href="#" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h2>👩‍🏫 Manage Teachers</h2>
+    <button onclick="openTeacherModal()" style="margin-bottom: 20px;">➕ Add Teacher</button>
+
+    <div class="section">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Teacher ID</th>
+            <th>Email</th>
+            <th>Password</th>
+            <th>Mobile</th>
+            <th>Subjects</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="teacherTableBody">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="teacherModal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeTeacherModal()">&times;</span>
+      <h3 id="modalTitle">Add Teacher</h3>
+      <form id="teacherForm">
+        <input type="hidden" id="original_teacher_id">
+        <div><input type="text" id="username" placeholder="Username" required style="width: 96%;  padding: 8px;margin-bottom: 10px;"></div>
+        <div><input type="text" id="teacher_id" placeholder="Teacher ID" required style="width: 96%;padding: 8px ;margin-bottom: 10px;; "></div>
+        <div><input type="email" id="email" placeholder="Email" required style="width: 96%; margin-bottom: 10px ;padding: 8px ;"></div>
+        <div><input type="password" id="password" placeholder="password" required style="width: 96%; margin-bottom: 10px;padding: 8px ;"></div>
+        <div><input type="text" id="mobile" placeholder="Mobile" required style="width: 96%; margin-bottom: 10px;padding: 8px ;"></div>
+        <div style="margin-bottom: 10px;">
+        <label for="subjectYear">Select Year:</label>
+        <select id="subjectYear" style="width: 100%; padding: 8px;">
+          <option value="">Choose Year</option>
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+        </select>
+      </div>
+        <div id="subjectList" style="margin-bottom: 10px;"></div>
+        <div id="selectedSubjects" style="margin-bottom: 10px;"><strong>Selected:</strong> None</div>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+const BACKEND_URL = "http://127.0.0.1:5000";
+
+// all subjects are fetched by teacher
+async function fetchAllSubjects() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/admin/fetch_subjects`);
+    const data = await res.json();
+    allSubjects = data.subjects;  // [{ id, subject_name, year }]
+  } catch (err) {
+    console.error("Failed to load subjects:", err);
+  }
+}
+
+    async function fetchTeachers() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/admin/fetch_teachers`);
+        const data = await res.json();
+        const tbody = document.getElementById("teacherTableBody");
+        tbody.innerHTML = "";
+
+        data.teachers.forEach(teacher => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${teacher.username}</td>
+            <td>${teacher.teacher_id}</td>
+            <td>${teacher.email}</td>
+            <td>${teacher.password}</td>
+            <td>${teacher.mobile}</td>
+            <td>${teacher.subjects || "None"}</td>
+            <td>
+              <button onclick='editTeacher(${JSON.stringify(teacher)})'>Edit</button>
+              <button style="background-color: red;" onclick='deleteTeacher("${teacher.teacher_id}")'>Delete</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Error fetching teachers:", err);
+      }
+    }
+
+let allSubjects=[];
+let selectedSubjects = [];
+
+
+
+document.getElementById("subjectYear").addEventListener("change", function () {
+  const year = this.value;
+  const subjectList = document.getElementById("subjectList");
+  subjectList.innerHTML = "";
+
+  const yearSubjects = allSubjects.filter(sub => sub.year == year);
+  yearSubjects.forEach(subject => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.innerText = subject.subject_name;
+    btn.style.margin = "5px";
+    btn.onclick = () => toggleSubject(subject.subject_name, btn);
+    subjectList.appendChild(btn);
+  });
+});
+
+
+
+
+// toggle subjecct in table
+function toggleSubject(subject, button) {
+  const index = selectedSubjects.indexOf(subject);
+  if (index >= 0) {
+    selectedSubjects.splice(index, 1);
+    button.style.backgroundColor = "#0984e3";
+  } else {
+    selectedSubjects.push(subject);
+    button.style.backgroundColor = "green";
+  }
+
+  document.getElementById("selectedSubjects").innerHTML =
+    `<strong>Selected:</strong> ${selectedSubjects.length ? selectedSubjects.join(", ") : "None"}`;
+}
+
+
+    function openTeacherModal(edit = false, teacher = {}) {
+      selectedSubjects=[];
+       document.getElementById("subjectList").innerHTML = "";
+  document.getElementById("selectedSubjects").innerHTML = "<strong>Selected:</strong> None";
+      document.getElementById("teacherModal").style.display = "block";
+      document.getElementById("modalTitle").innerText = edit ? "Edit Teacher" : "Add Teacher";
+      document.getElementById("username").value = teacher.username || "";
+      document.getElementById("teacher_id").value = teacher.teacher_id || "";
+      document.getElementById("email").value = teacher.email || "";
+      document.getElementById("password").value = teacher.password || "";
+
+      document.getElementById("mobile").value = teacher.mobile || "";
+      document.getElementById("original_teacher_id").value = edit ? teacher.teacher_id : "";
+      document.getElementById("teacher_id").readOnly = edit;
+    }
+
+    function closeTeacherModal() {
+      document.getElementById("teacherModal").style.display = "none";
+    }
+
+    function editTeacher(teacher) {
+  openTeacherModal(true, teacher);
+
+  // Pre-fill selectedSubjects array
+  selectedSubjects = teacher.subjects ? teacher.subjects.split(",").map(s => s.trim()) : [];
+
+  // Visually show selected subjects
+  const subjectButtons = document.querySelectorAll("#subjectList button");
+  subjectButtons.forEach(btn => {
+    if (selectedSubjects.includes(btn.innerText)) {
+      btn.style.backgroundColor = "green";
+    } else {
+      btn.style.backgroundColor = "#0984e3";
+    }
+  });
+
+  // Update selected subjects text
+  document.getElementById("selectedSubjects").innerHTML =
+    `<strong>Selected:</strong> ${selectedSubjects.length ? selectedSubjects.join(", ") : "None"}`;
+}
+
+
+    document.getElementById("teacherForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const teacher = {
+        username: document.getElementById("username").value,
+        teacher_id: document.getElementById("teacher_id").value,
+        email: document.getElementById("email").value,
+        password : document.getElementById("password").value,
+        mobile: document.getElementById("mobile").value,
+        subjects:selectedSubjects
+      };
+
+      const isEdit = document.getElementById("original_teacher_id").value !== "";
+      const url = `${BACKEND_URL}/admin/${isEdit ? "update_teacher" : "add_teacher"}`;
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(teacher),
+      });
+
+      const result = await res.json();
+      Swal.fire({
+        icon: "success",
+        title: isEdit ? "Teacher Updated" : "Teacher Added",
+        text: result.message || "",
+        confirmButtonColor: "#0984e3"
+      });
+
+      closeTeacherModal();
+      fetchTeachers();
+    });
+
+     async function deleteTeacher(id) {
+      Swal.fire({
+      title: "Are you sure?",
+      text: "This will delete the Teacher permanently.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d63031",
+      cancelButtonColor: "#636e72",
+      confirmButtonText: "Yes, delete"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const res = await fetch(`${BACKEND_URL}/admin/delete_teacher/${id}`, { method: "DELETE" });
+        const resultData = await res.json();
+        Swal.fire({
+          icon: "success",
+          title: "Deleted",
+          text: resultData.message || "Teacher deleted successfully."
+        });
+        fetchTeachers();
+      }
+    });
+  }
+
+
+    // Load on page ready
+  document.addEventListener("DOMContentLoaded", async () => {
+  await fetchAllSubjects();  // Fetch subjects first
+  fetchTeachers();           //  Then load teachers
+});
+
+function confirmLogout() {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "You will be logged out!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d63031",
+    cancelButtonColor: "#636e72",
+    confirmButtonText: "Yes, logout"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  });
+}
+
+  </script>
+</body>
+</html>

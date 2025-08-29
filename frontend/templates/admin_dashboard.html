@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #1e272e;
+      color: white;
+      min-height: 100vh;
+      padding-top: 20px;
+    }
+
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #00cec9;
+    }
+
+    .sidebar-nav {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .sidebar-nav li {
+      padding: 12px 20px;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar-nav li a {
+      color: #dcdde1;
+      text-decoration: none;
+      display: block;
+      transition: background 0.3s, padding-left 0.3s;
+    }
+
+    .sidebar-nav li a i {
+      margin-right: 10px;
+    }
+
+    .sidebar-nav li:hover {
+      background-color: #2f3640;
+      padding-left: 25px;
+    }
+
+    .sidebar-nav li.active {
+      background-color: #2f3640;
+      border-left: 4px solid #00cec9;
+    }
+
+    .sidebar-nav li.active a {
+      color: #00cec9;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    h1, h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .overview-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: linear-gradient(145deg, #ffffff, #e6e6e6);
+      padding: 20px;
+      width: 280px;
+      height: 150px;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #0984e3;
+      font-size: 25px;
+      align-content: center;
+    }
+
+    .card p {
+      margin: 8px 0;
+      font-size: 25px;
+      color: #333;
+    }
+
+
+    .modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.6);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 8% auto;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 700px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.close-btn {
+  float: right;
+  font-size: 22px;
+  font-weight: bold;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  color: red;
+}
+
+.section {
+      background: white;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ecf0f1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>Admin Panel</h2>
+    </div>
+    <ul class="sidebar-nav">
+      <li class="active"><a href="admin_dashboard.html"><i class="fas fa-home"></i> Home</a></li>
+      <li><a href="admin_manage_students.html"><i class="fas fa-user-graduate"></i> Manage Students</a></li>
+      <li><a href="admin_manage_teachers.html"><i class="fas fa-chalkboard-teacher"></i> Manage Teachers</a></li>
+      <li><a href="admin_manage_subjects.html"><i class="fas fa-book"></i> Manage Subjects</a></li>
+      <li><a href="#" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+    </ul>
+  </nav>
+
+  <!-- Fingerprint Section -->
+<div id="fingerprint-section" class="section" style="display:none; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <h2 style="margin-bottom: 20px; color: #2c3e50">🔒 Fingerprint Management</h2>
+
+  <div style="margin-bottom: 20px;">
+    <button onclick="fetchEnrolledIds()" style="padding: 10px 15px; background-color: #0984e3; color: white; border: none; border-radius: 5px;">🔍 View Enrolled IDs</button>
+  </div>
+
+  <div id="enrolledIdsContainer" style="margin-top: 10px;">
+    <table id="fingerprint-table" style="width: 100%; border-collapse: collapse; display: none;">
+      <thead>
+        <tr style="background-color: #f1f1f1;">
+          <th style="padding: 10px; border: 1px solid #ccc;">Fingerprint ID</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="list-status" style="margin-top: 10px; font-weight: 500;"></div>
+  </div>
+
+  <hr style="margin: 30px 0;">
+
+  <div style="margin-top: 20px;">
+    <h4 style="color: #2d3436;">🗑 Delete Fingerprint by ID</h4>
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+      <input type="number" id="delete-id" placeholder="Enter Fingerprint ID (1–127)" min="1" max="127" style="padding: 8px; width: 200px; border: 1px solid #ccc; border-radius: 5px;">
+      <button onclick="deleteFingerprint()" style="padding: 8px 15px; background-color: #d63031; color: white; border: none; border-radius: 5px;">Delete</button>
+    </div>
+    <div id="delete-status" style="margin-top:10px; font-weight: 500;"></div>
+  </div>
+</div>
+
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h1>Welcome Admin 👋</h1>
+
+    <div class="overview-cards">
+      <div class="card" onclick="openModal('Students by Year', 'students')">
+  <h3>Total Students</h3>
+  <p id="totalStudents">--</p>
+</div>
+
+<div class="card" onclick="openModal('Teachers ', 'teachers')">
+  <h3>Total Teachers</h3>
+  <p id="totalTeachers">--</p>
+</div>
+
+<div class="card" onclick="openModal('Subjects', 'subjects')">
+  <h3>Total Subjects</h3>
+  <p id="totalSubjects">--</p>
+</div>
+
+      <div class="card">
+        <h3>Today’s Attendance</h3>
+        <p id="attendanceStatus">Loading...</p>
+      </div>
+    </div>
+
+<div style="margin: 10px 0 20px 0;">
+  <button onclick="showFingerprintSection()" style="padding: 10px 20px; background-color: #636e72; color: white; border: none; border-radius: 6px; font-size: 16px;">
+    🔒 Manage Fingerprints
+  </button>
+</div>
+
+
+<div class="section">
+  <h3>Low Attendance Alerts (Defaulters)</h3>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+  <div>
+    <label for="defaulterYearFilter">Filter by Year:</label>
+    <select id="defaulterYearFilter" onchange="fetchDefaulters()" style="padding: 5px; margin-left: 5px;">
+      <option value="">All</option>
+      <option value="1">1st Year</option>
+      <option value="2">2nd Year</option>
+      <option value="3">3rd Year</option>
+      <option value="4">4th Year</option>
+    </select>
+  </div>
+  <button onclick="downloadDefaultersExcel()" style="padding: 8px 14px; background-color: #27ae60; color: white; border: none; border-radius: 6px;">
+    ⬇️ Download Excel
+  </button>
+</div>
+
+ 
+  <table id="defaultersTable" border="1">
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Year</th>
+        <th>Attendance %</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="3">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+
+    
+
+<div id="popupModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <h2 id="modalTitle">Loading...</h2>
+    <div id="filterSection" style="margin-bottom: 10px;"></div>
+    <div id="modalBody">Please wait...</div>
+  </div>
+</div>
+
+
+
+
+  <script>
+
+function showFingerprintSection() {
+  const section = document.getElementById("fingerprint-section");
+  const isVisible = section.style.display === "block";
+  document.querySelectorAll(".section").forEach(s => s.style.display = "none");
+  section.style.display = isVisible ? "none" : "block";
+}
+
+    
+  async function fetchAdminDashboard() {
+    try {
+      const res = await fetch("http://127.0.0.1:5000/get_admin_dashboard");
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      document.getElementById("totalStudents").innerText = data.total_students;
+      document.getElementById("totalTeachers").innerText = data.total_teachers;
+      document.getElementById("totalSubjects").innerText = data.total_subjects;
+
+      let attendanceSummary = "";
+      if (Array.isArray(data.today_attendance)) {
+        data.today_attendance.forEach(item => {
+          attendanceSummary += `${item.status}: ${item.today_attendance}  `;
+        });
+      }
+      document.getElementById("attendanceStatus").innerText = attendanceSummary || "No records today";
+    } catch (error) {
+      console.error("Error fetching admin dashboard:", error);
+      alert("Failed to load dashboard.");
+    }
+  }
+
+  function openModal(title, fetchType) {
+    document.getElementById("popupModal").style.display = "block";
+    document.getElementById("modalTitle").innerText = title;
+    document.getElementById("modalBody").innerHTML = "Loading...";
+    document.getElementById("filterSection").innerHTML = "";
+
+    if (fetchType === 'students') {
+      const filter = document.createElement("select");
+      filter.innerHTML = `<option disabled selected>Select Year</option>
+        <option value="1">1st Year</option>
+        <option value="2">2nd Year</option>
+        <option value="3">3rd Year</option>
+        <option value="4">4th Year</option>`;
+      filter.onchange = () => fetchList(fetchType, filter.value);
+      document.getElementById("filterSection").appendChild(filter);
+    } else {
+      fetchList(fetchType); // for 'teachers' and 'subjects'
+    }
+  }
+
+  function fetchList(type, year = null) {
+    let url = `http://127.0.0.1:5000/admin/fetch_${type}`;
+    if (year) url += `?year=${year}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          document.getElementById("modalBody").innerText = data.error;
+          return;
+        }
+
+        const list = data[type] || [];
+        if (!Array.isArray(list) || list.length === 0) {
+          document.getElementById("modalBody").innerText = "No data found.";
+          return;
+        }
+
+        let html = "<ul>";
+        list.forEach(item => {
+          if (type === 'students') {
+            html += `<li><strong>${item.username}</strong> (${item.prn})</li>`;
+          } else if (type === 'teachers') {
+            html += `<li><strong>${item.username}</strong> (${item.teacher_id})</li>`;
+          } else {
+            html += `<li><strong>${item.subject_name}</strong> (Year ${item.year})</li>`;
+          }
+        });
+        html += "</ul>";
+        document.getElementById("modalBody").innerHTML = html;
+      })
+      .catch(err => {
+        console.error("Error fetching list:", err);
+        document.getElementById("modalBody").innerText = "Error loading data.";
+      });
+  }
+
+  function closeModal() {
+    document.getElementById("popupModal").style.display = "none";
+  }
+
+  // fetches defaulters
+
+async function fetchDefaulters() {
+  const year = document.getElementById("defaulterYearFilter").value;
+  let url = `${window.location.protocol}//${window.location.hostname}:5000/admin/low_attendance_alerts`;
+  if (year) url += `?year=${encodeURIComponent(year)}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const tbody = document.querySelector("#defaultersTable tbody");
+    tbody.innerHTML = "";
+
+    if (data.defaulters && data.defaulters.length > 0) {
+      data.defaulters.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.username}</td>
+          <td>${row.year}</td>
+          <td>${row.attendance_percentage}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else if (data.defaulters) {
+      tbody.innerHTML = "<tr><td colspan='3'>No defaulters below 75%.</td></tr>";
+    } else if (data.error) {
+      tbody.innerHTML = `<tr><td colspan='3'>⚠️ Error: ${data.error}</td></tr>`;
+    } else {
+      tbody.innerHTML = "<tr><td colspan='3'>Unexpected response from server.</td></tr>";
+    }
+
+  } catch (err) {
+    console.error("❌ Failed to fetch defaulter summary:", err);
+    const tbody = document.querySelector("#defaultersTable tbody");
+    tbody.innerHTML = "<tr><td colspan='3'>❌ Error loading defaulters.</td></tr>";
+  }
+}
+
+const BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:5000`;// Your Flask server IP
+
+async function fetchEnrolledIds() {
+    const table = document.getElementById("fingerprint-table");
+    const tbody = table.querySelector("tbody");
+    const status = document.getElementById("list-status");
+
+    try {
+        const res = await fetch(`${BACKEND_URL}/fingerprint/list`);
+        const data = await res.json();
+
+        if (!data.used_ids || data.used_ids.length === 0) {
+            table.style.display = "none";
+            status.innerText = "No enrolled fingerprints found.";
+            status.style.color = "#e17055";
+            return;
+        }
+
+        // Clear previous rows
+        tbody.innerHTML = "";
+        data.used_ids.forEach(id => {
+            const row = tbody.insertRow();
+            const cell = row.insertCell(0);
+            cell.innerText = id;
+            cell.style.padding = "10px";
+            cell.style.border = "1px solid #ccc";
+        });
+
+        table.style.display = "table";
+        status.innerText = `Loaded ${data.used_ids.length} fingerprint IDs.`;
+        status.style.color = "green";
+    } catch (error) {
+        console.error(error);
+        status.innerText = "Failed to load fingerprints.";
+        status.style.color = "red";
+    }
+}
+
+async function deleteFingerprint() {
+  const id = document.getElementById("delete-id").value;
+  const status = document.getElementById("delete-status");
+
+  if (!id || id < 1 || id > 127) {
+    status.innerText = "Please enter a valid ID (1–127).";
+    status.style.color = "red";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/fingerprint/delete/${id}`);
+    const data = await res.json();
+
+    if (data.status === "success" && data.result.status === "Deleted") {
+      status.innerText = `✅ Fingerprint ID ${id} deleted successfully.`;
+      status.style.color = "green";
+      fetchEnrolledIds(); // Refresh the list
+    } else {
+      const errorMsg = data.result?.message || JSON.stringify(data.result || {});
+      status.innerText = `❌ Failed: ${errorMsg}`;
+      status.style.color = "red";
+    }
+  } catch (error) {
+    console.error(error);
+    status.innerText = "❌ Failed to connect to server or ESP.";
+    status.style.color = "red";
+  }
+}
+
+
+  function downloadDefaultersExcel() {
+    const table = document.getElementById("defaultersTable");
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Defaulters" });
+    XLSX.writeFile(wb, "Low_Attendance_Defaulters.xlsx");
+  }
+
+
+function confirmLogout() {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "You will be logged out!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d63031",
+    cancelButtonColor: "#636e72",
+    confirmButtonText: "Yes, logout"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  });
+}
+
+
+
+
+
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchAdminDashboard();
+    fetchDefaulters();
+  });
+</script>
+
+
+
+  
+</body>
+</html>

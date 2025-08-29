@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>View Attendance</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #F4F6F9;
+      display: flex;
+    }
+    .dashboard-container {
+      display: flex;
+      width: 100%;
+    }
+    .sidebar {
+      width: 240px;
+      background-color: #1e272e;
+      color: white;
+      min-height: 100vh;
+      padding-top: 20px;
+    }
+
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #00cec9;
+    }
+
+    .sidebar-nav {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .sidebar-nav li {
+      padding: 12px 20px;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar-nav li a {
+      color: #dcdde1;
+      text-decoration: none;
+      display: block;
+      transition: background 0.3s, padding-left 0.3s;
+    }
+
+    .sidebar-nav li a i {
+      margin-right: 10px;
+    }
+
+    .sidebar-nav li:hover {
+      background-color: #2f3640;
+      padding-left: 25px;
+    }
+
+    .sidebar-nav li.active {
+      background-color: #2f3640;
+      border-left: 4px solid #00cec9;
+    }
+
+    .sidebar-nav li.active a {
+      color: #00cec9;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+    }
+
+    .card {
+      background: white;
+      background: linear-gradient(145deg, #ffffff, #e5e3e3);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+
+    table th,
+    table td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: center;
+    }
+
+    table th {
+      background-color: #f8f9fa;
+    }
+
+    .highlight-low {
+      background-color: #f8d7da !important;
+    }
+
+    .section-header {
+      font-weight: 600;
+      margin-bottom: 15px;
+      font-size: 1.25rem;
+    }
+
+    .form-label {
+      font-weight: 500;
+    }
+
+    .btn-success {
+      width: 100%;
+    }
+
+    .form-check-label {
+      margin-left: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>Teacher Panel</h2>
+    </div>
+    <ul class="sidebar-nav">
+      <li ><a href="teacher_dashboard1.html"><i class="fas fa-home"></i> Home</a></li>
+      <li><a href="take_attendance.html"><i class="fas fa-user-check"></i> Take Attendance</a></li>
+      <li class="active"><a href="view_attendance.html"><i class="fas fa-eye"></i> View Attendance</a></li>
+      <!-- <li><a href="#"><i class="fas fa-envelope"></i> Send Summary</a></li> -->
+      <li><a href="#" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+    </ul>
+  </nav>
+
+
+    <div class="main-content">
+      <div class="card">
+        <div class="section-header">📊 Attendance Records</div>
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="subjectSelect" class="form-label">Select Subject:</label>
+            <select id="subjectSelect" class="form-select"></select>
+          </div>
+
+          <div class="col-md-3">
+            <label for="startDate" class="form-label">Start Date:</label>
+            <input type="date" id="startDate" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label for="endDate" class="form-label">End Date:</label>
+            <input type="date" id="endDate" class="form-control">
+          </div>
+
+          <div class="col-md-4">
+            <label for="searchInput" class="form-label">Search Student:</label>
+            <input type="text" id="searchInput" class="form-control" placeholder="Enter student name">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Download Report:</label>
+            <button class="btn btn-success" onclick="exportTableToExcel()">Download Excel</button>
+          </div>
+          <div class="col-12">
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="checkbox" id="defaulterCheckbox">
+              <label class="form-check-label" for="defaulterCheckbox">
+                Show only defaulters (below 75%)
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive mt-4">
+          <table id="attendanceTable" class="table table-bordered table-hover">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const teacherId = localStorage.getItem("user_id");
+
+  async function loadSubjects() {
+    const res = await fetch(`http://127.0.0.1:5000/get_teacher_subjects?teacher_id=${teacherId}`);
+    const data = await res.json();
+    const select = document.getElementById("subjectSelect");
+    select.innerHTML = "";
+    data.subjects.forEach(sub => {
+      const opt = document.createElement("option");
+      opt.value = sub;
+      opt.textContent = sub;
+      select.appendChild(opt);
+    });
+  }
+
+ async function loadAttendance(subject, fromDate = "", toDate = "") {
+  let url = `http://127.0.0.1:5000/view_attendance_data?teacher_id=${teacherId}&subject=${encodeURIComponent(subject)}`;
+  if (fromDate) url += `&from_date=${fromDate}`;
+  if (toDate) url += `&to_date=${toDate}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+  const headRow = document.getElementById("tableHead");
+  const body = document.getElementById("tableBody");
+  headRow.innerHTML = "";
+  body.innerHTML = "";
+
+  const dates = data.dates;
+  const attendanceData = data.attendance;
+
+  if (!attendanceData || attendanceData.length === 0) {
+    headRow.innerHTML = "<tr><th>No data</th></tr>";
+    return;
+  }
+
+  let header = "<tr><th>Username</th>";
+  dates.forEach(date => header += `<th>${date}</th>`);
+  header += "<th>Percentage</th></tr>";
+  headRow.innerHTML = header;
+
+  attendanceData.forEach(row => {
+    const totalLectures = dates.length;
+    let presentCount = 0;
+    dates.forEach(date => {
+      if (row[date] === "Present") presentCount++;
+    });
+    const percentage = totalLectures > 0 ? Math.round((presentCount / totalLectures) * 100) : 0;
+    let tr = `<tr data-percentage="${percentage}"><td>${row.username}</td>`;
+    dates.forEach(date => {
+      const status = row[date] || "Absent";
+      tr += `<td class="${status === 'Absent' ? 'highlight-low' : ''}">${status}</td>`;
+    });
+    tr += `<td>${percentage}%</td></tr>`;
+    body.insertAdjacentHTML("beforeend", tr);
+  });
+
+  applyDefaulterFilter();
+}
+
+
+    
+
+  function applyDefaulterFilter() {
+    const showDefaulters = document.getElementById("defaulterCheckbox").checked;
+    document.querySelectorAll("#tableBody tr").forEach(row => {
+      const perc = parseFloat(row.dataset.percentage || 0);
+      row.style.display = showDefaulters && perc >= 75 ? "none" : "";
+    });
+  }
+
+  function exportTableToExcel() {
+    const table = document.getElementById("attendanceTable");
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
+    XLSX.writeFile(wb, "attendance_report.xlsx");
+  }
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+  await loadSubjects();
+
+  const subjectSelect = document.getElementById("subjectSelect");
+  const startDateInput = document.getElementById("startDate");
+  const endDateInput = document.getElementById("endDate");
+  const defaulterCheckbox = document.getElementById("defaulterCheckbox");
+  const searchInput = document.getElementById("searchInput");
+
+  // Helper function to reload attendance with current filters
+  const reloadAttendance = () => {
+    const subject = subjectSelect.value;
+    const from = startDateInput.value;
+    const to = endDateInput.value;
+    if (subject) {
+      loadAttendance(subject, from, to);
+    }
+  };
+
+  // Event listeners
+  subjectSelect.addEventListener("change", reloadAttendance);
+  startDateInput.addEventListener("change", reloadAttendance);
+  endDateInput.addEventListener("change", reloadAttendance);
+  defaulterCheckbox.addEventListener("change", applyDefaulterFilter);
+
+  searchInput.addEventListener("input", (e) => {
+    const value = e.target.value.toLowerCase();
+    document.querySelectorAll("#tableBody tr").forEach(row => {
+      row.style.display = row.children[0].textContent.toLowerCase().includes(value) ? "" : "none";
+    });
+  });
+
+  // Initial load
+  const firstSubject = subjectSelect.value;
+  if (firstSubject) {
+    reloadAttendance();
+  }
+});
+
+
+ function confirmLogout() {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "You will be logged out!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d63031",
+    cancelButtonColor: "#636e72",
+    confirmButtonText: "Yes, logout"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  });
+}
+
+</script>
+</body>
+</html>

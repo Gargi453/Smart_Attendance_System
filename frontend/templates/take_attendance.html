@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Take Attendance</title>
+  <!-- <link rel="stylesheet" href="style.css" /> -->
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   <script src="https://cdn.sheetjs.com/xlsx-latest/package/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+    }
+
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    /* Sidebar (Student Style) */
+    .sidebar {
+      width: 240px;
+      background-color: #1e272e;
+      color: white;
+      min-height: 100vh;
+      padding-top: 20px;
+    }
+
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #00cec9;
+    }
+
+    .sidebar-nav {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .sidebar-nav li {
+      padding: 12px 20px;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar-nav li a {
+      color: #dcdde1;
+      text-decoration: none;
+      display: block;
+      transition: background 0.3s, padding-left 0.3s;
+    }
+
+    .sidebar-nav li a i {
+      margin-right: 10px;
+    }
+
+    .sidebar-nav li:hover {
+      background-color: #2f3640;
+      padding-left: 25px;
+    }
+
+    .sidebar-nav li.active {
+      background-color: #2f3640;
+      border-left: 4px solid #00cec9;
+    }
+
+    .sidebar-nav li.active a {
+      color: #00cec9;
+    }
+    
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #2c3e50;
+    }
+
+    .date-time {
+      font-size: 16px;
+      color: #555;
+    }
+
+    .card {
+      /* background-color: white; */
+      background: linear-gradient(145deg, #ffffff, #e6e2e2);
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #16a085;
+    }
+
+    .fingerprint-status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: red;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table th, table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    table th {
+      background-color: #1abc9c;
+      color: white;
+    }
+
+    .present {
+      color: green;
+    }
+
+    .absent {
+      color: red;
+    }
+
+    
+  .my-swal-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.my-confirm-btn {
+  order: 1;
+}
+
+.my-cancel-btn {
+  order: 2;
+}
+
+.horizontal-buttons {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+.confirm-btn, .cancel-btn {
+  margin: 0 !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+}
+
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>Teacher Panel</h2>
+    </div>
+    <ul class="sidebar-nav">
+      <li ><a href="teacher_dashboard1.html"><i class="fas fa-home"></i> Home</a></li>
+      <li class="active"><a href="take_attendance.html"><i class="fas fa-user-check"></i> Take Attendance</a></li>
+      <li><a href="view_attendance.html"><i class="fas fa-eye"></i> View Attendance</a></li>
+      <!-- <li><a href="#"><i class="fas fa-envelope"></i> Send Summary</a></li> -->
+      <li><a href="#" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+    </ul>
+  </nav>
+
+    <div class="main-content">
+      <div class="header">
+        <h1>Take Attendance</h1>
+        <div class="date-time" id="dateTime"></div>
+      </div>
+
+      <div class="card">
+        <h2>Select Subject</h2>
+        <select id="subjectSelect">
+          <option value="" disabled selected>Loading subjects...</option>
+        </select>
+        <button id="startAttendance">Start Attendance</button>
+        <button id="stopAttendance" style="display:none; margin-top:10px; background-color:#e74c3c;">Stop Attendance</button>
+        <div class="fingerprint-status" id="fingerprintStatus">Scanner Not Connected</div>
+      </div>
+
+      <div class="card">
+        <h2>Attendance Status</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let polling = false;
+  let selectedSubject = "";
+  let pollingInterval;
+  const BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
+  let espIpFromFlask = null;  // Will be set dynamically from Flask
+
+
+  function logout() {
+    window.location.href = "login.html";
+  }
+
+  function updateDateTime() {
+    const now = new Date();
+    document.getElementById("dateTime").innerText = now.toLocaleString();
+  }
+
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
+
+  async function loadSubjects() {
+    const teacherId = localStorage.getItem("user_id");
+    if (!teacherId) {
+      alert("Unauthorized access. Please log in again.");
+      window.location.href = "login.html";
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/get_teacher_subjects?teacher_id=${teacherId}`);
+      const data = await response.json();
+      const subjectSelect = document.getElementById("subjectSelect");
+      subjectSelect.innerHTML = "<option value='' disabled selected>Select a Subject</option>";
+
+      data.subjects.forEach(subject => {
+        const option = document.createElement("option");
+        option.value = subject;
+        option.textContent = subject;
+        subjectSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error loading subjects:", error);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", loadSubjects);
+  
+  document.getElementById("startAttendance").addEventListener("click", async () => {
+  selectedSubject = document.getElementById("subjectSelect").value;
+  const statusDiv = document.getElementById("fingerprintStatus");
+
+  if (!selectedSubject) {
+    alert("Please select a subject first!");
+    return;
+  }
+
+  try {
+    // Step 1: Send Flask IP to ESP & get ESP IP back
+    const ipRes = await fetch(`${BACKEND_URL}/send_ip_to_esp`, { method: "POST" });
+    const ipData = await ipRes.json();
+
+    if (!ipRes.ok || ipData.status !== "ok" || !ipData.esp_ip) {
+      throw new Error("ESP not found or sync failed");
+    }
+
+    // Build full URL for ESP
+    espIpFromFlask = `http://${ipData.esp_ip}`;
+    console.log("✅ ESP IP received from Flask:", espIpFromFlask);
+  } catch (err) {
+    console.error("❌ Could not sync Flask IP to ESP:", err);
+    statusDiv.innerText = "❌ Could not sync with ESP.";
+    statusDiv.style.color = "red";
+    return;
+  }
+
+  try {
+    // Step 2: Start scanning
+    const res = await fetch(`${espIpFromFlask}/start_scan`);
+    const status = await res.text();
+    console.log("📡 Scan started:", status);
+
+    statusDiv.innerText = "Scanner started. Waiting for fingerprints...";
+    statusDiv.style.color = "black";
+    document.getElementById("startAttendance").style.display = "none";
+    document.getElementById("stopAttendance").style.display = "inline-block";
+
+    polling = true;
+    pollingInterval = setInterval(pollForMatch, 3000);
+  } catch (err) {
+    console.error("❌ Start error:", err);
+    statusDiv.innerText = "❌ Scanner connection failed.";
+    statusDiv.style.color = "red";
+  }
+});
+
+
+  document.getElementById("stopAttendance").addEventListener("click", async () => {
+  const statusDiv = document.getElementById("fingerprintStatus");
+
+  try {
+    if (!espIpFromFlask) {
+      statusDiv.innerText = "⚠️ ESP IP not available. Cannot stop scan.";
+      statusDiv.style.color = "red";
+      return;
+    }
+
+    await fetch(`${espIpFromFlask}/stop_scan`);
+  } catch (e) {
+    console.warn("Stop failed:", e);
+    statusDiv.innerText = "⚠️ Could not reach ESP to stop scan.";
+    statusDiv.style.color = "orange";
+  }
+
+  polling = false;
+  clearInterval(pollingInterval);
+
+  statusDiv.innerText = "Scanner stopped.";
+  statusDiv.style.color = "black";
+  document.getElementById("startAttendance").style.display = "inline-block";
+  document.getElementById("stopAttendance").style.display = "none";
+});
+
+
+
+async function pollForMatch() {
+  const statusDiv = document.getElementById("fingerprintStatus");
+
+  try {
+    if (!espIpFromFlask || !espIpFromFlask.startsWith("http")) return;
+
+    const response = await fetch(`${espIpFromFlask}/get_match`);
+    if (!response.ok) {
+      throw new Error(`ESP responded with ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.match && data.fingerprint_id) {
+      console.log("✅ Matched Fingerprint ID:", data.fingerprint_id);
+
+      const payload = {
+        fingerprint_id: data.fingerprint_id,
+        subject: selectedSubject
+      };
+
+      const flaskResponse = await fetch(`${BACKEND_URL}/record_attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await flaskResponse.json();
+
+      if (result.success) {
+        const name = result.username || `ID ${data.fingerprint_id}`;
+        statusDiv.innerText = `✅ Marked Present: ${name}`;
+        statusDiv.style.color = "green";
+        addAttendanceRow(name, "Present");
+      } else {
+        statusDiv.innerText = `⚠️ Error: ${result.message || "Not recorded"}`;
+        statusDiv.style.color = "orange";
+      }
+    }
+  } catch (err) {
+    console.error("Polling error:", err);
+    statusDiv.innerText = "❌ Lost connection to ESP. Polling stopped.";
+    statusDiv.style.color = "red";
+    polling = false;
+    clearInterval(pollingInterval);
+  }
+}
+
+
+function addAttendanceRow(username, status) {
+  const table = document.getElementById("attendanceTable");
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>${username}</td>
+    <td class="${status.toLowerCase()}">${status}</td>
+  `;
+
+  table.appendChild(row);
+}
+
+
+function confirmLogout() {
+Swal.fire({
+  title: "Are you sure?",
+  text: "You will be logged out!",
+  icon: "warning",
+  showCancelButton: true,
+  confirmButtonText: "Yes, logout",
+  cancelButtonText: "Cancel",
+  confirmButtonColor: "#d63031",
+  cancelButtonColor: "#636e72",
+  // reverseButtons: true,
+  customClass: {
+    actions: 'horizontal-buttons',
+    confirmButton: 'confirm-btn',
+    cancelButton: 'cancel-btn'
+  }
+}).then((result) => {
+  if (result.isConfirmed) {
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+});
+
+}
+
+</script>
+
+
+</body>
+</html>

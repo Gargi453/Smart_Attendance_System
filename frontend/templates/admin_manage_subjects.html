@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manage Subjects</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #1e272e;
+      color: white;
+      min-height: 100vh;
+      padding-top: 20px;
+    }
+
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #00cec9;
+    }
+
+    .sidebar-nav {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .sidebar-nav li {
+      padding: 12px 20px;
+    }
+
+    .sidebar-nav li a {
+      color: #dcdde1;
+      text-decoration: none;
+      display: block;
+      transition: background 0.3s;
+    }
+
+    .sidebar-nav li:hover,
+    .sidebar-nav li.active {
+      background-color: #2f3640;
+    }
+
+    .sidebar-nav li.active {
+      border-left: 4px solid #00cec9;
+    }
+
+    .sidebar-nav li.active a {
+      color: #00cec9;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+    }
+
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ecf0f1;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 8% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .close-btn {
+      float: right;
+      font-size: 22px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: red;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #0984e3;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0077cc;
+    }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>Admin Panel</h2>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="admin_dashboard.html"><i class="fas fa-home"></i> Home</a></li>
+      <li><a href="admin_manage_students.html"><i class="fas fa-user-graduate"></i> Manage Students</a></li>
+      <li><a href="admin_manage_teachers.html"><i class="fas fa-chalkboard-teacher"></i> Manage Teachers</a></li>
+      <li class="active"><a href="admin_manage_subjects.html"><i class="fas fa-book"></i> Manage Subjects</a></li>
+      <li><a href="#" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <h2>📘 Manage Subjects</h2>
+    <button onclick="openSubjectModal()" style="margin-bottom: 20px;">➕ Add Subject</button>
+
+    <div class="section">
+      <table>
+        <thead>
+          <tr>
+            <th>Subject Name</th>
+            <th>Year</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="subjectTableBody">
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal" id="subjectModal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeSubjectModal()">&times;</span>
+      <h3 id="modalTitle">Add Subject</h3>
+      <form id="subjectForm">
+        <input type="hidden" id="subject_id">
+        <div><input type="text" id="subject_name" placeholder="Subject Name" required style="width: 96.5%; margin-bottom: 10px; padding: 8px;"></div>
+        <div>
+          <select id="subject_year" required style="width: 100%; padding: 8px;">
+            <option value="">Select Year</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+        <br>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = "http://127.0.0.1:5000";
+    // fetched all subject
+    async function fetchSubjects() {
+      const res = await fetch(`${BACKEND_URL}/admin/fetch_subjects`);
+      const data = await res.json();
+      const tbody = document.getElementById("subjectTableBody");
+      tbody.innerHTML = "";
+
+      data.subjects.forEach(subject => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${subject.subject_name}</td>
+          <td>${subject.year}</td>
+          <td>
+            <button onclick='editSubject(${JSON.stringify(subject)})'>Edit</button>
+            <button style="background-color: red;" onclick='deleteSubject(${subject.id})'>Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openSubjectModal(edit = false, subject = {}) {
+      document.getElementById("subjectModal").style.display = "block";
+      document.getElementById("modalTitle").innerText = edit ? "Edit Subject" : "Add Subject";
+      document.getElementById("subject_id").value = subject.id || "";
+      document.getElementById("subject_name").value = subject.subject_name || "";
+      document.getElementById("subject_year").value = subject.year || "";
+    }
+
+    function closeSubjectModal() {
+      document.getElementById("subjectModal").style.display = "none";
+    }
+
+    //delete subject 
+  async function deleteSubject(id) {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will delete the subject permanently.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d63031",
+      cancelButtonColor: "#636e72",
+      confirmButtonText: "Yes, delete it"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const res = await fetch(`${BACKEND_URL}/admin/delete_subject/${id}`, { method: "DELETE" });
+        const resultData = await res.json();
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: resultData.message || "Subject deleted successfully."
+        });
+        fetchSubjects(); //  Refresh after delete
+      }
+    });
+  }
+
+
+    document.getElementById("subjectForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("subject_id").value;
+      const name = document.getElementById("subject_name").value.trim();
+      const year = parseInt(document.getElementById("subject_year").value);
+    
+      const method = id ? "PUT" : "POST";
+      const endpoint = id ? `/admin/update_subject` : `/admin/add_subject`;
+    
+      const res = await fetch(`${BACKEND_URL}${endpoint}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, subject_name: name, year })
+      });
+    
+      const result = await res.json();
+    
+      Swal.fire({
+        icon: "success",
+        title: id ? "Subject Updated" : "Subject Added",
+        text: result.message || "",
+        confirmButtonColor: "#0984e3"
+      });
+    
+      closeSubjectModal();
+      fetchSubjects(); // Refresh after add/edit
+    });
+
+
+    function editSubject(subject) {
+      openSubjectModal(true, subject);
+    }
+
+
+   function confirmLogout() {
+     Swal.fire({
+       title: "Are you sure?",
+       text: "You will be logged out!",
+       icon: "warning",
+       showCancelButton: true,
+       confirmButtonColor: "#d63031",
+       cancelButtonColor: "#636e72",
+       confirmButtonText: "Yes, logout"
+     }).then((result) => {
+       if (result.isConfirmed) {
+         localStorage.clear();
+         window.location.href = "login.html";
+       }
+     });
+   }
+
+    document.addEventListener("DOMContentLoaded", fetchSubjects);
+  </script>
+</body>
+</html>

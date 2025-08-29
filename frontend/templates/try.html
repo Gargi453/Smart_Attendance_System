@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Registration</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+</head>
+<body>
+    <div class="login-container">
+    <div class="image-section">
+      <div class="image-blur-overlay">
+        <img src="../static/images/back.png" alt="Attendance Illustration">
+      </div>
+      </div>
+
+     <div class="form-section">
+        <h1 id="page-title" onclick="toggleForm()">Smart Attendance Management System</h1>
+        <!-- Login Form -->
+        <div class="login-box" id="login-form">
+            <h2>Login</h2>
+            <p>Enter your Username and Password</p>
+            <div class="tab-buttons">
+                <button class="role-btn active" data-role="student" onclick="setRole(this)">Student</button>
+                <button class="role-btn" data-role="teacher" onclick="setRole(this)">Teacher</button>
+                <button class="role-btn" data-role="admin" onclick="setRole(this)">Admin</button>
+            </div>
+
+            <input type="text" id="login-username" placeholder="Username">
+            <div class="password-container">
+                <input type="password" id="login-password" placeholder="Password">
+                <span class="toggle-password" onclick="togglePassword('login-password')">👁</span>
+            </div>
+            <button class="submit-btn" onclick="handleLogin()">Login</button>
+            <div class="links">
+                <p><a href="#" onclick="toggleForm()">Sign Up!</a></p>
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="login-box" id="signup-form" style="display: none;">
+            <p>Choose Registration Type</p>
+            <div class="tab-buttons">
+                <button id="student-btn" onclick="showForm('student')">Student</button>
+                <button id="teacher-btn" onclick="showForm('teacher')">Teacher</button>
+            </div>
+
+            <!-- Student Registration -->
+            <div id="student-fields">
+                <input type="text" id="student-username" placeholder="Username" required>
+                <input type="text" id="student-prn" placeholder="PRN" required>
+                <input type="text" id="student-mobile" placeholder="Mobile Number" required>
+                <input type="email" id="student-email" placeholder="Email" required>
+
+                <div class="password-container">
+                    <input type="password" id="student-password" placeholder="Set Password">
+                    <span class="toggle-password" onclick="togglePassword('student-password')">👁</span>
+                </div>
+
+                <input type="text" id="student-fingerprint" placeholder="Fingerprint ID" required>
+                <button type="button" onclick="enrollFingerprint()">Take Fingerprint</button>
+                <div id="fingerprint-status" style="margin-top: 10px; color: green;"></div>
+
+                <select id="student-year">
+                    <option value="" disabled selected>Select Year</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+            </div>
+
+            <!-- Teacher Registration -->
+            <div id="teacher-fields" style="display: none;">
+                <input type="text" id="teacher-username" placeholder="Username" required>
+                <input type="text" id="teacher-id" placeholder="Teacher ID" required>
+                <input type="text" id="teacher-mobile" placeholder="Mobile Number" required>
+                <input type="email" id="teacher-email" placeholder="Email" required>
+
+                <div class="password-container">
+                    <input type="password" id="teacher-password" placeholder="Set Password">
+                    <span class="toggle-password" onclick="togglePassword('teacher-password')">👁</span>
+                </div>
+
+                <select id="teacher-year" onchange="loadSubjects()">
+                    <option value="" disabled selected>Select Year</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+                <div id="subject-list" class="scrollable-list"></div>
+                <div id="selected-subjects"><strong>Selected Subjects:</strong> </div>
+            </div>
+
+            <button class="submit-btn" onclick="validateSignUp()">Sign Up</button>
+            <div class="links">
+                <p><a href="#" onclick="toggleForm()">Back to Login</a></p>
+            </div>
+        </div>
+    </div>
+    </div>
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <h2 id="modal-title">✅ Success</h2>
+        <p id="modal-message">Your action was successful.</p>
+        <button onclick="closeSuccessModal()">OK</button>
+      </div>
+    </div>
+
+    <script src="../static/js/script.js"></script>
+</body>
+</html>

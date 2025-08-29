@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Attendance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/xlsx.full.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+    }
+
+    .dashboard-container {
+      display: flex;
+      width: 100%;
+    }
+
+    .sidebar {
+  width: 240px;
+  background-color: #1e272e;
+  color: white;
+  min-height: 100vh;
+  padding-top: 20px;
+}
+
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #00cec9;
+}
+
+.sidebar-nav {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.sidebar-nav li {
+  padding: 12px 20px;
+  border-left: 4px solid transparent;
+}
+
+.sidebar-nav li a {
+  color: #dcdde1;
+  text-decoration: none;
+  display: block;
+  transition: background 0.3s, padding-left 0.3s;
+}
+
+.sidebar-nav li a i {
+  margin-right: 10px;
+}
+
+.sidebar-nav li:hover {
+  background-color: #2f3640;
+  padding-left: 25px;
+}
+
+.sidebar-nav li.active {
+  background-color: #2f3640;
+  border-left: 4px solid #00cec9;
+}
+
+.sidebar-nav li.active a {
+  color: #00cec9;
+}
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: flex-start;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      width: 280px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-left: 5px solid #1abc9c;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card.defaulter {
+      border-left-color: red;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #34495e;
+    }
+
+    .progress-bar {
+      background: #ecf0f1;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress {
+      height: 10px;
+      background-color: #1abc9c;
+      width: 0;
+    }
+
+    .section {
+      background: white;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 400px !important;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ecf0f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+   <nav class="sidebar">
+  <div class="sidebar-header">
+    <h2>Student Panel</h2>
+  </div>
+  <ul class="sidebar-nav">
+    <li><a href="student_dashboard.html"><i class="fas fa-home"></i> Home</a></li>
+    <li class="active"><a href="student_attendance.html"><i class="fas fa-calendar-check"></i> My Attendance</a></li>
+    <li><a href="#" onclick="confirmLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+</nav>
+    <div class="main-content">
+      <h2>My Attendance</h2>
+
+      <div class="card-grid" id="attendanceCards"></div>
+
+      <div class="section">
+        <h3>Subject-wise Attendance Chart</h3>
+        <canvas id="attendanceChart"></canvas>
+      </div>
+
+      <div class="section">
+        <h3>Date-wise Attendance</h3>
+        <table id="attendanceTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    async function fetchAttendance() {
+      const studentId = localStorage.getItem("user_id");
+      if (!studentId) {
+        alert("Student ID not found");
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://127.0.0.1:5000/get_student_attendance_summary?student_id=${studentId}`);
+        const data = await res.json();
+        const container = document.getElementById("attendanceCards");
+        container.innerHTML = "";
+
+        let chartLabels = [], chartData = [];
+
+        data.attendance.forEach(subject => {
+          const percentage = subject.total_lectures > 0
+            ? Math.round((subject.attended_lectures / subject.total_lectures) * 100)
+            : 0;
+
+          chartLabels.push(subject.subject_name);
+          chartData.push(percentage);
+
+          const card = document.createElement("div");
+          card.className = "card" + ((subject.total_lectures > 0 && percentage < 75) ? " defaulter" : "");
+
+          card.innerHTML = `
+            <h3>${subject.subject_name}</h3>
+            <p><strong>Total Lectures:</strong> ${subject.total_lectures}</p>
+            <p><strong>Attended Lectures:</strong> ${subject.attended_lectures}</p>
+            <p><strong>Attendance:</strong> ${percentage}%</p>
+            <div class="progress-bar">
+              <div class="progress" style="width: ${percentage}%;"></div>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        renderChart(chartLabels, chartData);
+        populateTable(data.datewise_attendance || []);
+      } catch (err) {
+        console.error("Error fetching attendance", err);
+        alert("Could not load attendance data.");
+      }
+    }
+
+    function renderChart(labels, data) {
+      const ctx = document.getElementById("attendanceChart").getContext("2d");
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Attendance %',
+            data: data,
+            backgroundColor: 'rgba(52, 152, 219, 0.6)'
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
+        }
+      });
+    }
+
+    function populateTable(records) {
+      const tbody = document.querySelector("#attendanceTable tbody");
+      tbody.innerHTML = "";
+      records.forEach(entry => {
+        const rawDate = new Date(entry.attendance_date);
+        const date = `${String(rawDate.getDate()).padStart(2, '0')}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${rawDate.getFullYear()}`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${date}</td>
+          <td>${entry.subject_name}</td>
+          <td>${entry.status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+
+    function confirmLogout() {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "You will be logged out!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d63031",
+    cancelButtonColor: "#636e72",
+    confirmButtonText: "Yes, logout"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  });
+}
+    document.addEventListener("DOMContentLoaded", fetchAttendance);
+  </script>
+</body>
+</html>
